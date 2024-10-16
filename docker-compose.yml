@@ -1,0 +1,64 @@
+services:
+  api-gateway:
+    container_name: api-gateway
+    build:
+      context: .
+      dockerfile: ./apps/api-gateway/Dockerfile
+
+    environment:
+      - ENV_NAME=dev
+      - GATEWAY_PORT=3000
+      - RABBITMQ_URL=amqp://rabbit:5672
+
+      - GATEWAY_LISTENER_QUEUE=GATEWAY_LISTENER_QUEUE
+      - BINANCE_SERVICE_QUEUE=BINANCE_SERVICE_QUEUE
+
+    ports:
+      - 3000:3000
+      
+  binance-service:
+    container_name: binance-service
+
+    build:
+      context: .
+      dockerfile: ./apps/binance-service/Dockerfile
+
+    environment:
+      - ENV_NAME=dev
+
+      - BINANCE_PORT=3001
+      - BINANCE_SERVICE_QUEUE=BINANCE_SERVICE_QUEUE
+
+      - BINANCE_BASE_URL=https://testnet.binance.vision
+      - BINANCE_API_KEY=OXlYfbkZ6DwlednxyCBooCT4ex2Whj4iHGeXviZDUWfdtTBY4qkRfpEfrx01BkDP
+      - BINANCE_SECRET_KEY=7sYHxM2AGTvcEuf6KsQ94neODIrLZo2UNoNflXVPejSTyYvaWdkh8FqnkFLq6yhJ
+
+      - BINANCE_PRICE_FREQUENCY=20
+      - BINANCE_PRICE_COMMISION=0.05
+
+      - RABBITMQ_URL=amqp://rabbit:5672
+      - REDIS_URL=redis://redis:6379
+    links:
+      - rabbit
+      - redis 
+
+  rabbit:
+    image: rabbitmq:3.13.3-management-alpine
+    container_name: 'rabbitmq'
+    ports:
+      - 5672:5672
+      - 15672:15672
+
+  redis:
+    image: redis/redis-stack
+
+    container_name: redis
+    ports:
+      - 6379:6379
+      - 8001:8001 
+
+    volumes:
+      - redis-data:/data/redis
+
+volumes:
+  redis-data:
